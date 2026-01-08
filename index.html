@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formatura do João</title>
+    <style>
+        /* --- CONFIGURAÇÕES GERAIS --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #1a1a2e; /* Azul noturno elegante */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .scene {
+            width: 600px;
+            height: 400px;
+            perspective: 1500px;
+            position: relative;
+        }
+
+        /* --- LIVRO --- */
+        .book {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-in-out;
+            cursor: pointer;
+            transform: translateX(-25%); /* Centraliza fechado */
+        }
+
+        .book.open {
+            transform: translateX(0%); /* Centraliza aberto */
+        }
+
+        /* --- PÁGINA DIREITA (TEXTO) --- */
+        .page-right {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            top: 0; right: 0;
+            background-color: #fdfbf7;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            box-shadow: inset 10px 0 20px rgba(0,0,0,0.1);
+            border-radius: 0 5px 5px 0;
+            z-index: 1;
+        }
+
+        /* --- PEÇA MÓVEL --- */
+        .flipper {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            top: 0; right: 0;
+            transform-origin: left;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-in-out;
+            z-index: 10;
+        }
+
+        .book.open .flipper {
+            transform: rotateY(-180deg);
+        }
+
+        .flipper-front, .flipper-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+        }
+
+        /* --- CAPA REALISTA --- */
+        .flipper-front {
+            color: #ffd700;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            padding: 20px;
+            
+            /* Borda Metálica */
+            border: 8px solid; 
+            border-image: linear-gradient(to bottom right, #946c1e, #ffd700, #946c1e, #ffd700, #946c1e) 1;
+            
+            /* Fundo: Cor Sólida (caso falhe a net) + Textura Online */
+            background-color: #3e2723; 
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.8) 0%, transparent 40%),
+                url('https://media.istockphoto.com/id/537284406/pt/foto/de-couro-marrom.jpg?s=612x612&w=0&k=20&c=so6hDUuCwKZO2aTX8Uj3Sl4cxaQJY8WHq5c0oG3Ezo4='); 
+            background-size: cover; 
+            background-position: center;
+            
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 4px rgba(0,0,0,1);
+        }
+
+        /* Centralização do conteúdo da capa */
+        .cover-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* FOTO DA CAPA (ARQUIVO LOCAL) */
+        .cover-photo-circle {
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin: 25px auto; 
+            border: 6px solid #967117; 
+            box-shadow: inset 0 0 0 2px #ffd700, 0 5px 15px rgba(0,0,0,0.7);
+        }
+
+        /* VERSO */
+        .flipper-back {
+            background-color: #fdfbf7;
+            transform: rotateY(180deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-shadow: inset -10px 0 20px rgba(0,0,0,0.1);
+            border-radius: 5px 0 0 5px;
+        }
+
+        /* --- ESTILO TEXTOS --- */
+        .cover-content h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(to right, transparent, #ffd700, transparent) 1;
+            padding-bottom: 10px;
+            letter-spacing: 2px;
+            width: fit-content;
+        }
+        
+        .click-hint {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+            letter-spacing: 1px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .invite-text h2 { color: #2c3e50; margin-bottom: 15px; }
+        .highlight { color: #d4af37; font-weight: bold; }
+        
+        /* --- FOTOS INTERNAS --- */
+        .photo-frame {
+            width: 90%; height: 80%; position: relative;
+            border: 5px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden; background: #eee;
+        }
+
+        .photo-frame img {
+            width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0;
+            transition: opacity 2s ease; 
+        }
+
+        #img-atual { z-index: 1; }
+        #img-crianca { opacity: 1; z-index: 2; }
+        .esconder-foto { opacity: 0 !important; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05);}
+        }
+
+        @media (max-width: 650px) {
+            .scene { zoom: 0.6; }
+            .book { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" src="musica.mp3"></audio>
+
+    <div class="scene">
+        <div class="book" id="book">
+            
+            <div class="page-right">
+                <div class="invite-text">
+                    <h2>CONVITE DE FORMATURA</h2>
+                    <p>Uma jornada que começou pequena e agora se torna imensa.</p>
+                    <br>
+                    <p><strong>🎓 Missa </strong> </p>
+                    <p><strong>📅 Data:</strong> <span class="highlight">20/01/2026</span></p>
+                    <p><strong>⏰ Horário:</strong> 19:00 </p>
+                    <p><strong>📍 Local:</strong>Igreja São Benedito</p>
+                </div>
+            </div>
+
+            <div class="flipper">
+                
+                <div class="flipper-front">
+                    <div class="cover-content">
+                        <h1>CONVITE</h1>
+                        
+                        <img src="foto_crianca.jpeg" class="cover-photo-circle" alt="Foto Capa">
+                        
+                        <p style="font-size: 1.4rem; font-weight: bold; letter-spacing: 1px;">JOÃO RICARDO</p>
+                        <p style="font-size: 1rem; margin-top: 10px;">Formatura do Ensino Médio</p>
+                    </div>
+                    
+                    <p class="click-hint">TOQUE PARA ABRIR</p>
+                </div>
+
+                <div class="flipper-back">
+                    <div class="photo-frame">
+                        <img id="img-atual" src="foto_atual.jpeg" alt="João Atual">
+                        
+                        <img id="img-crianca" src="foto_crianca.jpeg" alt="João Criança">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const book = document.getElementById('book');
+        const audio = document.getElementById('bg-music');
+        const imgCrianca = document.getElementById('img-crianca');
+
+        book.addEventListener('click', () => {
+            // Se já estiver aberto, fecha e reseta tudo
+            if (book.classList.contains('open')) {
+                book.classList.remove('open');
+                audio.pause();
+                audio.currentTime = 0;
+                imgCrianca.classList.remove('esconder-foto'); // A foto de criança volta a aparecer
+                return;
+            }
+
+            // Abre o livro
+            book.classList.add('open');
+
+            // Toca a música
+            audio.play().catch(error => {
+                console.log("Erro: Arquivo musica.mp3 não encontrado ou bloqueado.");
+            });
+
+            // Espera 2 segundos e esconde a foto de criança
+            setTimeout(() => {
+                imgCrianca.classList.add('esconder-foto');
+            }, 2000); 
+        });
+    </script>
+</body>
+</html>
